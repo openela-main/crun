@@ -1,6 +1,6 @@
 Summary: OCI runtime written in C
 Name: crun
-Version: 1.8.4
+Version: 1.8.7
 Release: 1%{?dist}
 Source0: https://github.com/containers/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 License: GPLv2+
@@ -50,13 +50,33 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %{_mandir}/man1/*
 
 %changelog
+* Tue Aug 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.7-1
+- update to https://github.com/containers/crun/releases/tag/1.8.7
+- Related: #2176063
+
+* Thu Jul 27 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.6-1
+- update to https://github.com/containers/crun/releases/tag/1.8.6
+- Related: #2176063
+
+* Mon May 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.5-1
+- update to https://github.com/containers/crun/releases/tag/1.8.5
+- Related: #2176063
+
 * Fri Apr 14 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.4-1
 - update to https://github.com/containers/crun/releases/tag/1.8.4
-- Resolves: #2184222
+- Related: #2184220
 
-* Tue Apr 04 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.1-2
+* Tue Apr 04 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.3-2
 - fix could not find symbol criu_set_lsm_mount_context in libcriu.so
-- Resolves: #2184222
+- Resolves: #2184220
+
+* Sun Mar 26 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.3-1
+- update to https://github.com/containers/crun/releases/tag/1.8.3
+- Related: #2176063
+
+* Wed Mar 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.2-1
+- update to https://github.com/containers/crun/releases/tag/1.8.2
+- Related: #2176063
 
 * Tue Feb 28 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.1-1
 - update to https://github.com/containers/crun/releases/tag/1.8.1
