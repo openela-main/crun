@@ -1,9 +1,8 @@
 Summary: OCI runtime written in C
 Name: crun
-Version: 1.8.4
-Release: 2%{?dist}
+Version: 1.8.7
+Release: 1%{?dist}
 Source0: https://github.com/containers/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
-Patch0: 0001-criu-check-if-the-criu_join_ns_add-function-exists.patch
 License: GPLv2+
 URL: https://github.com/containers/crun
 # https://fedoraproject.org/wiki/PackagingDrafts/Go#Go_Language_Architectures
@@ -51,33 +50,41 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %{_mandir}/man1/*
 
 %changelog
-* Mon Apr 17 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.4-2
-- Apply additional criu fix
-- Resolves: #2184221
+* Tue Aug 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.7-1
+- update to https://github.com/containers/crun/releases/tag/1.8.7
+- Related: #2176055
 
-* Fri Apr 14 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.4-1
+* Mon Jul 31 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.6-1
+- update to https://github.com/containers/crun/releases/tag/1.8.6
+- Related: #2176055
+
+* Mon May 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.5-1
+- update to https://github.com/containers/crun/releases/tag/1.8.5
+- Related: #2176055
+
+* Mon Apr 24 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.4-1
 - update to https://github.com/containers/crun/releases/tag/1.8.4
-- Resolves: #2184221
+- Related: #2176055
 
-* Tue Apr 04 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.1-3
+* Tue Apr 04 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.3-2
 - fix could not find symbol criu_set_lsm_mount_context in libcriu.so
-- Resolves: #2184221
+- Resolves: #2183041
+
+* Sun Mar 26 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.3-1
+- update to https://github.com/containers/crun/releases/tag/1.8.3
+- Related: #2176055
+
+* Fri Mar 24 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.2-1
+- update to https://github.com/containers/crun/releases/tag/1.8.2
+- Related: #2176055
 
 * Mon Mar 20 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.1-2
 - add BR: criu-devel
-- Resolves: #2179195
+- Related: #2176055
 
-* Tue Feb 28 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.1-1
+* Thu Mar 09 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.1-1
 - update to https://github.com/containers/crun/releases/tag/1.8.1
-- Related: #2123641
-
-* Thu Feb 02 2023 Jindrich Novy <jnovy@redhat.com> - 1.8-1
-- update to https://github.com/containers/crun/releases/tag/1.8
-- Related: #2123641
-
-* Thu Jan 05 2023 Jindrich Novy <jnovy@redhat.com> - 1.7.2-2
-- require libgcrypt-devel and add criu weak dep
-- Resolves: #2158084
+- Related: #2176055
 
 * Wed Nov 30 2022 Jindrich Novy <jnovy@redhat.com> - 1.7.2-1
 - update to https://github.com/containers/crun/releases/tag/1.7.2
