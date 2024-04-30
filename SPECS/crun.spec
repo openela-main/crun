@@ -1,6 +1,6 @@
 Summary: OCI runtime written in C
 Name: crun
-Version: 1.8.7
+Version: 1.14.3
 Release: 1%{?dist}
 Source0: https://github.com/containers/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 License: GPLv2+
@@ -50,6 +50,58 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %{_mandir}/man1/*
 
 %changelog
+* Mon Feb 19 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.3-1
+- update to https://github.com/containers/crun/releases/tag/1.14.3
+- Related: RHEL-2112
+
+* Fri Feb 16 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.2-1
+- update to https://github.com/containers/crun/releases/tag/1.14.2
+- Related: RHEL-2112
+
+* Fri Feb 09 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.1-1
+- update to https://github.com/containers/crun/releases/tag/1.14.1
+- Related: RHEL-2112
+
+* Wed Jan 24 2024 Jindrich Novy <jnovy@redhat.com> - 1.14-1
+- update to https://github.com/containers/crun/releases/tag/1.14
+- Related: RHEL-2112
+
+* Wed Jan 17 2024 Jindrich Novy <jnovy@redhat.com> - 1.13-1
+- update to https://github.com/containers/crun/releases/tag/1.13
+- Related: RHEL-2112
+
+* Tue Jan 02 2024 Jindrich Novy <jnovy@redhat.com> - 1.12-1
+- update to https://github.com/containers/crun/releases/tag/1.12
+- Related: RHEL-2112
+
+* Tue Nov 07 2023 Jindrich Novy <jnovy@redhat.com> - 1.11.2-1
+- update to https://github.com/containers/crun/releases/tag/1.11.2
+- Related: RHEL-2112
+
+* Tue Oct 31 2023 Jindrich Novy <jnovy@redhat.com> - 1.11.1-1
+- update to https://github.com/containers/crun/releases/tag/1.11.1
+- Related: RHEL-2112
+
+* Mon Oct 30 2023 Jindrich Novy <jnovy@redhat.com> - 1.11-1
+- update to https://github.com/containers/crun/releases/tag/1.11
+- Related: RHEL-2112
+
+* Fri Oct 20 2023 Jindrich Novy <jnovy@redhat.com> - 1.10-1
+- update to https://github.com/containers/crun/releases/tag/1.10
+- Related: RHEL-2112
+
+* Fri Sep 29 2023 Jindrich Novy <jnovy@redhat.com> - 1.9.2-1
+- update to https://github.com/containers/crun/releases/tag/1.9.2
+- Related: Jira:RHEL-2112
+
+* Tue Sep 26 2023 Jindrich Novy <jnovy@redhat.com> - 1.9.1-1
+- update to https://github.com/containers/crun/releases/tag/1.9.1
+- Related: Jira:RHEL-2112
+
+* Fri Sep 15 2023 Jindrich Novy <jnovy@redhat.com> - 1.9-1
+- update to https://github.com/containers/crun/releases/tag/1.9
+- Related: Jira:RHEL-2112
+
 * Tue Aug 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.7-1
 - update to https://github.com/containers/crun/releases/tag/1.8.7
 - Related: #2176063
