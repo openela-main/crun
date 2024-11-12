@@ -1,6 +1,6 @@
 Summary: OCI runtime written in C
 Name: crun
-Version: 1.14.3
+Version: 1.16.1
 Release: 1%{?dist}
 Source0: https://github.com/containers/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 License: GPLv2+
@@ -22,7 +22,6 @@ BuildRequires: criu-devel
 BuildRequires: python3-libmount
 BuildRequires: libtool
 BuildRequires: /usr/bin/go-md2man
-BuildRequires: libgcrypt-devel
 Provides: oci-runtime
 Recommends: criu >= 3.17.1
 Recommends: criu-libs
@@ -50,6 +49,26 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %{_mandir}/man1/*
 
 %changelog
+* Thu Aug 15 2024 Jindrich Novy <jnovy@redhat.com> - 1.16.1-1
+- update to https://github.com/containers/crun/releases/tag/1.16.1
+- Related: RHEL-27608
+
+* Mon Aug 12 2024 Jindrich Novy <jnovy@redhat.com> - 1.16-1
+- update to https://github.com/containers/crun/releases/tag/1.16
+- Related: RHEL-27608
+
+* Tue May 07 2024 Jindrich Novy <jnovy@redhat.com> - 1.15-1
+- update to https://github.com/containers/crun/releases/tag/1.15
+- Related: RHEL-27608
+
+* Thu Mar 07 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.4-1
+- update to https://github.com/containers/crun/releases/tag/1.14.4
+- Related: RHEL-27608
+
+* Mon Feb 19 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.3-2
+- remove libgcrypt-devel BR - not needed any longer
+- Related: Jira:RHEL-2112
+
 * Mon Feb 19 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.3-1
 - update to https://github.com/containers/crun/releases/tag/1.14.3
 - Related: RHEL-2112
