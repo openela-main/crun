@@ -1,308 +1,159 @@
+%global krun_opts %{nil}
+%global wasmedge_opts %{nil}
+%global yajl_opts %{nil}
+
+%if %{defined copr_username}
+%define copr_build 1
+%endif
+
+# krun and wasm support only on aarch64 and x86_64
+%ifarch aarch64 || x86_64
+
+# Disable wasmedge on rhel 10 until EPEL10 is in place, otherwise it causes
+# build issues on copr
+%if %{defined fedora} || (%{defined copr_build} && %{defined rhel} && 0%{?rhel} < 10)
+%global wasm_support 1
+%global wasmedge_support 1
+%global wasmedge_opts --with-wasmedge
+%endif
+
+# krun only exists on fedora
+%if %{defined fedora}
+%global krun_support 1
+%global krun_opts --with-libkrun
+%endif
+
+%endif
+
+%if %{defined fedora} || (%{defined rhel} && 0%{?rhel} < 10)
+%global system_yajl 1
+%else
+%global yajl_opts --enable-embedded-yajl
+%endif
+
 Summary: OCI runtime written in C
 Name: crun
-Version: 1.16.1
+%if %{defined copr_build}
+Epoch: 102
+%endif
+# DO NOT TOUCH the Version string!
+# The TRUE source of this specfile is:
+# https://github.com/containers/crun/blob/main/rpm/crun.spec
+# If that's what you're reading, Version must be 0, and will be updated by Packit for
+# copr and koji builds.
+# If you're reading this on dist-git, the version is automatically filled in by Packit.
+Version: 1.19.1
 Release: 1%{?dist}
-Source0: https://github.com/containers/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
-License: GPLv2+
-URL: https://github.com/containers/crun
-# https://fedoraproject.org/wiki/PackagingDrafts/Go#Go_Language_Architectures
-ExclusiveArch: %{go_arches}
-# We always run autogen.sh
+URL: https://github.com/containers/%{name}
+Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
+License: GPL-2.0-only
+%if %{defined golang_arches_future}
+ExclusiveArch: %{golang_arches_future}
+%else
+ExclusiveArch: aarch64 ppc64le riscv64 s390x x86_64
+%endif
 BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: gcc
-BuildRequires: python3
-BuildRequires: git
+BuildRequires: git-core
+BuildRequires: gperf
 BuildRequires: libcap-devel
+%if %{defined krun_support}
+BuildRequires: libkrun-devel
+%endif
 BuildRequires: systemd-devel
+%if %{defined system_yajl}
 BuildRequires: yajl-devel
+%endif
 BuildRequires: libseccomp-devel
-BuildRequires: libselinux-devel
-BuildRequires: criu-devel
 BuildRequires: python3-libmount
 BuildRequires: libtool
-BuildRequires: /usr/bin/go-md2man
-Provides: oci-runtime
+BuildRequires: protobuf-c-devel
+%ifnarch riscv64
+BuildRequires: criu-devel >= 3.17.1-2
 Recommends: criu >= 3.17.1
 Recommends: criu-libs
+%endif
+%if %{defined wasmedge_support}
+BuildRequires: wasmedge-devel
+%endif
+BuildRequires: python
+Provides: oci-runtime
 
 %description
-crun is a runtime for running OCI containers
+%{name} is a OCI runtime
+
+%if %{defined krun_support}
+%package krun
+Summary: %{name} with libkrun support
+Requires: libkrun
+Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
+Provides: krun = %{?epoch:%{epoch}:}%{version}-%{release}
+
+%description krun
+krun is a symlink to the %{name} binary, with libkrun as an additional dependency.
+%endif
+
+%if %{defined wasm_support}
+%package wasm
+Summary: %{name} with wasm support
+Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
+# wasm packages are not present on RHEL yet and are currently a PITA to test
+# Best to only include wasmedge as weak dep on rhel
+%if %{defined fedora}
+Requires: wasm-library
+%endif
+Recommends: wasmedge
+
+%description wasm
+%{name}-wasm is a symlink to the %{name} binary, with wasm as an additional dependency.
+%endif
 
 %prep
 %autosetup -Sgit -n %{name}-%{version}
 
 %build
 export CFLAGS="%{optflags} -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+export LDFLAGS="%{build_ldflags}"
 ./autogen.sh
-%configure --disable-silent-rules
-
+./configure --disable-silent-rules %{krun_opts} %{wasmedge_opts} %{yajl_opts}
 %make_build
 
 %install
-%make_install
+%make_install prefix=%{_prefix}
 rm -rf %{buildroot}%{_prefix}/lib*
 
 %files
 %license COPYING
 %{_bindir}/%{name}
-%{_mandir}/man1/*
+%{_mandir}/man1/%{name}.1.gz
+
+%if %{defined krun_support}
+%files krun
+%license COPYING
+%{_bindir}/krun
+%{_mandir}/man1/krun.1.gz
+%endif
+
+%if %{defined wasm_support}
+%files wasm
+%license COPYING
+%{_bindir}/%{name}-wasm
+%endif
 
 %changelog
-* Thu Aug 15 2024 Jindrich Novy <jnovy@redhat.com> - 1.16.1-1
-- update to https://github.com/containers/crun/releases/tag/1.16.1
-- Related: RHEL-27608
-
-* Mon Aug 12 2024 Jindrich Novy <jnovy@redhat.com> - 1.16-1
-- update to https://github.com/containers/crun/releases/tag/1.16
-- Related: RHEL-27608
-
-* Tue May 07 2024 Jindrich Novy <jnovy@redhat.com> - 1.15-1
-- update to https://github.com/containers/crun/releases/tag/1.15
-- Related: RHEL-27608
-
-* Thu Mar 07 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.4-1
-- update to https://github.com/containers/crun/releases/tag/1.14.4
-- Related: RHEL-27608
-
-* Mon Feb 19 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.3-2
-- remove libgcrypt-devel BR - not needed any longer
-- Related: Jira:RHEL-2112
-
-* Mon Feb 19 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.3-1
-- update to https://github.com/containers/crun/releases/tag/1.14.3
-- Related: RHEL-2112
-
-* Fri Feb 16 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.2-1
-- update to https://github.com/containers/crun/releases/tag/1.14.2
-- Related: RHEL-2112
-
-* Fri Feb 09 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.1-1
-- update to https://github.com/containers/crun/releases/tag/1.14.1
-- Related: RHEL-2112
-
-* Wed Jan 24 2024 Jindrich Novy <jnovy@redhat.com> - 1.14-1
-- update to https://github.com/containers/crun/releases/tag/1.14
-- Related: RHEL-2112
-
-* Wed Jan 17 2024 Jindrich Novy <jnovy@redhat.com> - 1.13-1
-- update to https://github.com/containers/crun/releases/tag/1.13
-- Related: RHEL-2112
-
-* Tue Jan 02 2024 Jindrich Novy <jnovy@redhat.com> - 1.12-1
-- update to https://github.com/containers/crun/releases/tag/1.12
-- Related: RHEL-2112
-
-* Tue Nov 07 2023 Jindrich Novy <jnovy@redhat.com> - 1.11.2-1
-- update to https://github.com/containers/crun/releases/tag/1.11.2
-- Related: RHEL-2112
-
-* Tue Oct 31 2023 Jindrich Novy <jnovy@redhat.com> - 1.11.1-1
-- update to https://github.com/containers/crun/releases/tag/1.11.1
-- Related: RHEL-2112
-
-* Mon Oct 30 2023 Jindrich Novy <jnovy@redhat.com> - 1.11-1
-- update to https://github.com/containers/crun/releases/tag/1.11
-- Related: RHEL-2112
-
-* Fri Oct 20 2023 Jindrich Novy <jnovy@redhat.com> - 1.10-1
-- update to https://github.com/containers/crun/releases/tag/1.10
-- Related: RHEL-2112
-
-* Fri Sep 29 2023 Jindrich Novy <jnovy@redhat.com> - 1.9.2-1
-- update to https://github.com/containers/crun/releases/tag/1.9.2
-- Related: Jira:RHEL-2112
-
-* Tue Sep 26 2023 Jindrich Novy <jnovy@redhat.com> - 1.9.1-1
-- update to https://github.com/containers/crun/releases/tag/1.9.1
-- Related: Jira:RHEL-2112
-
-* Fri Sep 15 2023 Jindrich Novy <jnovy@redhat.com> - 1.9-1
-- update to https://github.com/containers/crun/releases/tag/1.9
-- Related: Jira:RHEL-2112
-
-* Tue Aug 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.7-1
-- update to https://github.com/containers/crun/releases/tag/1.8.7
-- Related: #2176063
-
-* Thu Jul 27 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.6-1
-- update to https://github.com/containers/crun/releases/tag/1.8.6
-- Related: #2176063
-
-* Mon May 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.5-1
-- update to https://github.com/containers/crun/releases/tag/1.8.5
-- Related: #2176063
-
-* Fri Apr 14 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.4-1
-- update to https://github.com/containers/crun/releases/tag/1.8.4
-- Related: #2184220
-
-* Tue Apr 04 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.3-2
-- fix could not find symbol criu_set_lsm_mount_context in libcriu.so
-- Resolves: #2184220
-
-* Sun Mar 26 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.3-1
-- update to https://github.com/containers/crun/releases/tag/1.8.3
-- Related: #2176063
-
-* Wed Mar 22 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.2-1
-- update to https://github.com/containers/crun/releases/tag/1.8.2
-- Related: #2176063
-
-* Tue Feb 28 2023 Jindrich Novy <jnovy@redhat.com> - 1.8.1-1
-- update to https://github.com/containers/crun/releases/tag/1.8.1
-- Related: #2124478
-
-* Wed Feb 01 2023 Jindrich Novy <jnovy@redhat.com> - 1.8-1
-- update to https://github.com/containers/crun/releases/tag/1.8
-- Related: #2124478
-
-* Thu Jan 05 2023 Jindrich Novy <jnovy@redhat.com> - 1.7.2-2
-- require libgcrypt-devel and add criu weak dep
-- Resolves: #2158083
-
-* Wed Nov 30 2022 Jindrich Novy <jnovy@redhat.com> - 1.7.2-1
-- update to https://github.com/containers/crun/releases/tag/1.7.2
-- Related: #2124478
-
-* Mon Nov 28 2022 Jindrich Novy <jnovy@redhat.com> - 1.7.1-1
-- update to https://github.com/containers/crun/releases/tag/1.7.1
-- Related: #2124478
-
-* Tue Nov 08 2022 Jindrich Novy <jnovy@redhat.com> - 1.7-1
-- update to https://github.com/containers/crun/releases/tag/1.7
-- Related: #2124478
-
-* Tue Oct 18 2022 Jindrich Novy <jnovy@redhat.com> - 1.6-1
-- update to https://github.com/containers/crun/releases/tag/1.6
-- Related: #2124478
-
-* Tue Aug 02 2022 Jindrich Novy <jnovy@redhat.com> - 1.5-1
-- update to https://github.com/containers/crun/releases/tag/1.5
-- Related: #2061316
-
-* Wed May 11 2022 Jindrich Novy <jnovy@redhat.com> - 1.4.5-2
-- BuildRequires: /usr/bin/go-md2man
-- Related: #2061316
-
-* Wed Apr 27 2022 Jindrich Novy <jnovy@redhat.com> - 1.4.5-1
-- update to https://github.com/containers/crun/releases/tag/1.4.5
-- Related: #2061316
-
-* Thu Mar 24 2022 Jindrich Novy <jnovy@redhat.com> - 1.4.4-1
-- update to https://github.com/containers/crun/releases/tag/1.4.4
-- Related: #2061316
-
-* Tue Mar 08 2022 Jindrich Novy <jnovy@redhat.com> - 1.4.3-1
-- update to https://github.com/containers/crun/releases/tag/1.4.3
-- Related: #2061316
-
-* Wed Jan 26 2022 Jindrich Novy <jnovy@redhat.com> - 1.4.2-1
-- update to https://github.com/containers/crun/releases/tag/1.4.2
-- Related: #2000051
-
-* Fri Jan 14 2022 Jindrich Novy <jnovy@redhat.com> - 1.4.1-1
-- update to https://github.com/containers/crun/releases/tag/1.4.1
-- Related: #2000051
-
-* Wed Dec 22 2021 Jindrich Novy <jnovy@redhat.com> - 1.4-1
-- update to https://github.com/containers/crun/releases/tag/1.4
-- Related: #2000051
-
-* Fri Nov 05 2021 Jindrich Novy <jnovy@redhat.com> - 1.3-1
-- update to https://github.com/containers/crun/releases/tag/1.3
-- Related: #2000051
-
-* Mon Oct 11 2021 Jindrich Novy <jnovy@redhat.com> - 1.2-1
-- update to https://github.com/containers/crun/releases/tag/1.2
-- Related: #2000051
-
-* Fri Oct 01 2021 Jindrich Novy <jnovy@redhat.com> - 1.1-3
-- perform only sanity/installability tests for now
-- Related: #2000051
-
-* Wed Sep 29 2021 Jindrich Novy <jnovy@redhat.com> - 1.1-2
-- add gating.yaml
-- Related: #2000051
-
-* Wed Sep 29 2021 Jindrich Novy <jnovy@redhat.com> - 1.1-1
-- update to https://github.com/containers/crun/releases/tag/1.1
-- Related: #2000051
-
-* Fri Sep 03 2021 Jindrich Novy <jnovy@redhat.com> - 1.0-1
-- update to https://github.com/containers/crun/releases/tag/1.0
-- Related: #2000051
-
-* Mon Aug 09 2021 Mohan Boddu <mboddu@redhat.com> - 0.21-4
-- Rebuilt for IMA sigs, glibc 2.34, aarch64 flags
-  Related: rhbz#1991688
-
-* Fri Aug 06 2021 Jindrich Novy <jnovy@redhat.com> - 0.21-3
-- do not use versioned provide
-- Resolves: #1974951
-
-* Fri Jul 30 2021 Jindrich Novy <jnovy@redhat.com> - 0.21-2
-- re-add versioned provide
-- Related: #1970747
-
-* Tue Jul 27 2021 Jindrich Novy <jnovy@redhat.com> - 0.21-1
-- update to https://github.com/containers/crun/releases/tag/0.21
-- Related: #1970747
-
-* Tue Jun 22 2021 Lokesh Mandvekar <lsm5@redhat.com> - 0.20.1-4
-- Resolves: #1974951 - Versionless oci-runtime
-
-* Tue Jun 15 2021 Jindrich Novy <jnovy@redhat.com> - 0.20.1-3
-- add BR: criu-devel
-- Resolves: #1944964
-
-* Mon Jun 14 2021 Jindrich Novy <jnovy@redhat.com> - 0.20.1-2
-- update to https://github.com/containers/crun/releases/tag/0.20.1
-- Related: #1970747
-
-* Thu Apr 15 2021 Mohan Boddu <mboddu@redhat.com> - 0.19-2
-- Rebuilt for RHEL 9 BETA on Apr 15th 2021. Related: rhbz#1947937
-
-* Tue Apr 06 2021 Jindrich Novy <jnovy@redhat.com> - 0.19-1
-- update to https://github.com/containers/crun/releases/tag/0.19
-
-* Fri Feb 19 2021 Jindrich Novy <jnovy@redhat.com> - 0.18-2
-- allow to build without glibc-static (thanks to Giuseppe Scrivano)
-
-* Fri Feb 19 2021 Jindrich Novy <jnovy@redhat.com> - 0.18-1
-- update to https://github.com/containers/crun/releases/tag/0.18
-
-* Tue Jan 26 2021 Jindrich Novy <jnovy@redhat.com> - 0.17-1
-- update to https://github.com/containers/crun/releases/tag/0.17
-
-* Thu Dec 03 2020 Jindrich Novy <jnovy@redhat.com> - 0.16-2
-- exclude i686 because of build failures
-- Related: #1883490
-
-* Wed Nov 25 2020 Jindrich Novy <jnovy@redhat.com> - 0.16-1
-- update to https://github.com/containers/crun/releases/tag/0.16
-
-* Wed Nov 04 2020 Jindrich Novy <jnovy@redhat.com> - 0.15.1-1
-- update to https://github.com/containers/crun/releases/tag/0.15.1
-
-* Thu Oct 29 2020 Jindrich Novy <jnovy@redhat.com> - 0.15-2
-- backport "exec: check read bytes from sync" (gscrivan@redhat.com)
-  (https://github.com/containers/crun/issues/511)
-
-* Wed Sep 23 2020 Jindrich Novy <jnovy@redhat.com> - 0.15-1
-- update to https://github.com/containers/crun/releases/tag/0.15
-
-* Tue Aug 11 2020 Jindrich Novy <jnovy@redhat.com> - 0.14.1-2
-- use proper CFLAGS
-- Related: #1821193
-
-* Wed Jul 08 2020 Jindrich Novy <jnovy@redhat.com> - 0.14.1-1
-- update to https://github.com/containers/crun/releases/tag/v0.14.1
-- Related: #1821193
-
-* Thu Jul 02 2020 Jindrich Novy <jnovy@redhat.com> - 0.14-1
-- update to https://github.com/containers/crun/releases/tag/v0.14
-- Related: #1821193
-
-* Tue Jun 16 2020 Giuseppe Scrivano <gscrivan@redhat.com> - 0.13-1
-- initial import
+* Thu Jan 02 2025 Jindrich Novy <jnovy@redhat.com> - 1.19.1-1
+- update to https://github.com/containers/crun/releases/tag/1.19.1
+- Related: RHEL-60277
+
+* Wed Dec 11 2024 Jindrich Novy <jnovy@redhat.com> - 1.19-2
+- Add missing CFLAGS and LDFLAGS for annocheck/hardening
+- Related: RHEL-60277
+
+* Mon Dec 09 2024 Jindrich Novy <jnovy@redhat.com> - 1.19-1
+- update to https://github.com/containers/crun/releases/tag/1.19
+- Related: RHEL-60277
+
+* Mon Nov 25 2024 Jindrich Novy <jnovy@redhat.com> - 1.18.2-1
+- update to https://github.com/containers/crun/releases/tag/1.18.2
+- Related: RHEL-60277
