@@ -42,7 +42,7 @@ Epoch: 102
 # If that's what you're reading, Version must be 0, and will be updated by Packit for
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
-Version: 1.19.1
+Version: 1.21
 Release: 1%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
@@ -142,6 +142,18 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
+* Fri Mar 28 2025 Jindrich Novy <jnovy@redhat.com> - 1.21-1
+- update to https://github.com/containers/crun/releases/tag/1.21
+- Resolves: RHEL-84950
+
+* Tue Mar 18 2025 Jindrich Novy <jnovy@redhat.com> - 1.20-2
+- fix gating.yaml
+- Resolves: RHEL-83146
+
+* Wed Feb 05 2025 Jindrich Novy <jnovy@redhat.com> - 1.20-1
+- update to https://github.com/containers/crun/releases/tag/1.20
+- Related: RHEL-60277
+
 * Thu Jan 02 2025 Jindrich Novy <jnovy@redhat.com> - 1.19.1-1
 - update to https://github.com/containers/crun/releases/tag/1.19.1
 - Related: RHEL-60277
