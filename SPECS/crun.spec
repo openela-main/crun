@@ -42,7 +42,7 @@ Epoch: 102
 # If that's what you're reading, Version must be 0, and will be updated by Packit for
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
-Version: 1.21
+Version: 1.22
 Release: 1%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
@@ -69,11 +69,9 @@ BuildRequires: libseccomp-devel
 BuildRequires: python3-libmount
 BuildRequires: libtool
 BuildRequires: protobuf-c-devel
-%ifnarch riscv64
 BuildRequires: criu-devel >= 3.17.1-2
 Recommends: criu >= 3.17.1
 Recommends: criu-libs
-%endif
 %if %{defined wasmedge_support}
 BuildRequires: wasmedge-devel
 %endif
@@ -142,6 +140,10 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
+* Tue Jul 15 2025 Jindrich Novy <jnovy@redhat.com> - 1.22-1
+- update to https://github.com/containers/crun/releases/tag/1.22
+- Resolves: RHEL-101023
+
 * Fri Mar 28 2025 Jindrich Novy <jnovy@redhat.com> - 1.21-1
 - update to https://github.com/containers/crun/releases/tag/1.21
 - Resolves: RHEL-84950
