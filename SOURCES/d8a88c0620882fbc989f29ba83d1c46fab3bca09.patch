@@ -1,0 +1,237 @@
+From d8a88c0620882fbc989f29ba83d1c46fab3bca09 Mon Sep 17 00:00:00 2001
+From: Giuseppe Scrivano <gscrivan@redhat.com>
+Date: Tue, 9 Sep 2025 18:16:34 +0200
+Subject: [PATCH] criu: checkpoint correctly the shared empty directory path
+
+commit 4004e5bed9ff52029a829131fbc16f9a877154b9 introduced the
+regression.  It is not part of any release.
+
+Signed-off-by: Giuseppe Scrivano <gscrivan@redhat.com>
+---
+ src/libcrun/criu.c    | 76 ++++++++++++++++++++++++++++++-------------
+ src/libcrun/linux.c   | 20 ++++--------
+ src/libcrun/seccomp.c |  4 +--
+ src/libcrun/status.c  | 22 +++++++++++++
+ src/libcrun/status.h  |  1 +
+ 5 files changed, 86 insertions(+), 37 deletions(-)
+
+diff --git a/src/libcrun/criu.c b/src/libcrun/criu.c
+index f94c243d6e..45c1cce81b 100644
+--- a/src/libcrun/criu.c
++++ b/src/libcrun/criu.c
+@@ -267,6 +267,54 @@ criu_check_mem_track (char *work_path, libcrun_error_t *err)
+ 
+ #  endif
+ 
++static int
++register_masked_paths_mounts (runtime_spec_schema_config_schema *def, libcrun_container_t *container,
++                              struct libcriu_wrapper_s *libcriu_wrapper, bool is_restore, libcrun_error_t *err)
++{
++  cleanup_free char *empty_dir_path = NULL;
++  bool shared_dir_registered = false;
++  size_t i;
++  int ret;
++
++  for (i = 0; i < def->linux->masked_paths_len; i++)
++    {
++      struct stat statbuf;
++      ret = stat (def->linux->masked_paths[i], &statbuf);
++      if (ret != 0)
++        continue;
++
++      if (S_ISDIR (statbuf.st_mode))
++        {
++          if (! shared_dir_registered)
++            {
++              ret = get_shared_empty_directory_path (&empty_dir_path,
++                                                     (container->context ? container->context->state_root : NULL), err);
++              if (UNLIKELY (ret < 0))
++                return ret;
++
++              ret = libcriu_wrapper->criu_add_ext_mount (empty_dir_path, empty_dir_path);
++              if (UNLIKELY (ret < 0))
++                return crun_make_error (err, -ret, "CRIU: failed adding external mount for shared empty directory `%s`", empty_dir_path);
++
++              shared_dir_registered = true;
++            }
++
++          ret = libcriu_wrapper->criu_add_ext_mount (def->linux->masked_paths[i], empty_dir_path);
++          if (UNLIKELY (ret < 0))
++            return crun_make_error (err, -ret, "CRIU: failed adding external mount for masked directory `%s`", def->linux->masked_paths[i]);
++        }
++      else if (S_ISREG (statbuf.st_mode))
++        {
++          const char *bind_target = is_restore ? "/dev/null" : def->linux->masked_paths[i];
++          ret = libcriu_wrapper->criu_add_ext_mount (def->linux->masked_paths[i], bind_target);
++          if (UNLIKELY (ret < 0))
++            return crun_make_error (err, -ret, "CRIU: failed adding external mount to `%s`", bind_target);
++        }
++    }
++
++  return 0;
++}
++
+ static int
+ restore_cgroup_v1_mount (runtime_spec_schema_config_schema *def, libcrun_error_t *err)
+ {
+@@ -609,17 +657,9 @@ libcrun_container_checkpoint_linux_criu (libcrun_container_status_t *status, lib
+         }
+     }
+ 
+-  for (i = 0; i < def->linux->masked_paths_len; i++)
+-    {
+-      struct stat statbuf;
+-      ret = stat (def->linux->masked_paths[i], &statbuf);
+-      if (ret == 0 && S_ISREG (statbuf.st_mode))
+-        {
+-          ret = libcriu_wrapper->criu_add_ext_mount (def->linux->masked_paths[i], def->linux->masked_paths[i]);
+-          if (UNLIKELY (ret < 0))
+-            return crun_make_error (err, -ret, "CRIU: failed adding external mount to `%s`", def->linux->masked_paths[i]);
+-        }
+-    }
++  ret = register_masked_paths_mounts (def, container, libcriu_wrapper, false, err);
++  if (UNLIKELY (ret < 0))
++    return ret;
+ 
+   /* CRIU tries to checkpoint and restore all namespaces. However,
+    * namespaces could be shared between containers in a pod.
+@@ -947,17 +987,9 @@ libcrun_container_restore_linux_criu (libcrun_container_status_t *status, libcru
+         }
+     }
+ 
+-  for (i = 0; i < def->linux->masked_paths_len; i++)
+-    {
+-      struct stat statbuf;
+-      ret = stat (def->linux->masked_paths[i], &statbuf);
+-      if (ret == 0 && S_ISREG (statbuf.st_mode))
+-        {
+-          ret = libcriu_wrapper->criu_add_ext_mount (def->linux->masked_paths[i], "/dev/null");
+-          if (UNLIKELY (ret < 0))
+-            return crun_make_error (err, -ret, "CRIU: failed adding external mount to `%s`", "/dev/null");
+-        }
+-    }
++  ret = register_masked_paths_mounts (def, container, libcriu_wrapper, true, err);
++  if (UNLIKELY (ret < 0))
++    return ret;
+ 
+   /* do realpath on root */
+   bundle_cleanup = realpath (status->bundle, NULL);
+diff --git a/src/libcrun/linux.c b/src/libcrun/linux.c
+index ce7faa5b24..ed0d888794 100644
+--- a/src/libcrun/linux.c
++++ b/src/libcrun/linux.c
+@@ -1087,7 +1087,6 @@ get_shared_empty_dir_cached (libcrun_container_t *container, char **proc_fd_path
+ {
+   struct private_data_s *private_data = get_private_data (container);
+   cleanup_close int fd = -1;
+-  cleanup_free char *run_dir = NULL;
+   cleanup_free char *empty_dir_path = NULL;
+   int ret;
+ 
+@@ -1099,16 +1098,7 @@ get_shared_empty_dir_cached (libcrun_container_t *container, char **proc_fd_path
+     }
+ 
+   /* Slow path: create directory and cache everything once */
+-  ret = get_run_directory (&run_dir, container->context->state_root, err);
+-  if (UNLIKELY (ret < 0))
+-    return ret;
+-
+-  ret = append_paths (&empty_dir_path, err, run_dir, ".empty-directory", NULL);
+-  if (UNLIKELY (ret < 0))
+-    return ret;
+-
+-  /* Ensure the empty directory exists (once per container) */
+-  ret = crun_ensure_directory (empty_dir_path, 0555, false, err);
++  ret = get_shared_empty_directory_path (&empty_dir_path, container->context->state_root, err);
+   if (UNLIKELY (ret < 0))
+     return ret;
+ 
+@@ -2674,7 +2664,9 @@ do_notify_socket (libcrun_container_t *container, const char *rootfs, libcrun_er
+   if (notify_socket == NULL)
+     return 0;
+ 
+-  ret = libcrun_get_state_directory (&state_dir, container->context->state_root, container->context->id, err);
++  ret = libcrun_get_state_directory (&state_dir,
++                                     (container->context ? container->context->state_root : NULL),
++                                     container->context->id, err);
+   if (UNLIKELY (ret < 0))
+     return ret;
+ 
+@@ -4637,7 +4629,9 @@ prepare_and_send_dev_mounts (libcrun_container_t *container, int sync_socket_hos
+   if (! has_userns || is_empty_string (container->context->id) || geteuid () > 0)
+     return send_mounts (sync_socket_host, dev_fds, how_many, def->linux->devices_len, err);
+ 
+-  ret = libcrun_get_state_directory (&state_dir, container->context->state_root, container->context->id, err);
++  ret = libcrun_get_state_directory (&state_dir,
++                                     (container->context ? container->context->state_root : NULL),
++                                     container->context->id, err);
+   if (UNLIKELY (ret < 0))
+     return ret;
+ 
+diff --git a/src/libcrun/seccomp.c b/src/libcrun/seccomp.c
+index 6075c87dff..7d769093c8 100644
+--- a/src/libcrun/seccomp.c
++++ b/src/libcrun/seccomp.c
+@@ -589,7 +589,7 @@ store_seccomp_cache (struct libcrun_seccomp_gen_ctx_s *ctx, libcrun_error_t *err
+   if (is_empty_string (ctx->checksum))
+     return 0;
+ 
+-  dirfd = open_rundir_dirfd (container->context->state_root, err);
++  dirfd = open_rundir_dirfd ((container->context ? container->context->state_root : NULL), err);
+   if (UNLIKELY (dirfd < 0))
+     return dirfd;
+ 
+@@ -874,7 +874,7 @@ libcrun_open_seccomp_bpf (struct libcrun_seccomp_gen_ctx_s *ctx, int *fd, libcru
+   if (container == NULL || container->context == NULL)
+     return crun_make_error (err, EINVAL, "invalid internal state");
+ 
+-  dirfd = open_rundir_dirfd (container->context->state_root, err);
++  dirfd = open_rundir_dirfd ((container->context ? container->context->state_root : NULL), err);
+   if (UNLIKELY (dirfd < 0))
+     return dirfd;
+ 
+diff --git a/src/libcrun/status.c b/src/libcrun/status.c
+index 5e6dd63594..d57e7a3fbe 100644
+--- a/src/libcrun/status.c
++++ b/src/libcrun/status.c
+@@ -85,6 +85,28 @@ get_run_directory (char **out, const char *state_root, libcrun_error_t *err)
+   return 0;
+ }
+ 
++int
++get_shared_empty_directory_path (char **out, const char *state_root, libcrun_error_t *err)
++{
++  cleanup_free char *run_dir = NULL;
++  int ret;
++
++  ret = get_run_directory (&run_dir, state_root, err);
++  if (UNLIKELY (ret < 0))
++    return ret;
++
++  ret = append_paths (out, err, run_dir, ".empty-directory", NULL);
++  if (UNLIKELY (ret < 0))
++    return ret;
++
++  /* Ensure the empty directory exists */
++  ret = crun_ensure_directory (*out, 0555, false, err);
++  if (UNLIKELY (ret < 0))
++    return ret;
++
++  return 0;
++}
++
+ int
+ libcrun_get_state_directory (char **out, const char *state_root, const char *id, libcrun_error_t *err)
+ {
+diff --git a/src/libcrun/status.h b/src/libcrun/status.h
+index 994624e416..d37a8d2a02 100644
+--- a/src/libcrun/status.h
++++ b/src/libcrun/status.h
+@@ -65,6 +65,7 @@ int libcrun_status_write_exec_fifo (const char *state_root, const char *id, libc
+ int libcrun_status_has_read_exec_fifo (const char *state_root, const char *id, libcrun_error_t *err);
+ int libcrun_check_pid_valid (libcrun_container_status_t *status, libcrun_error_t *err);
+ int get_run_directory (char **out, const char *state_root, libcrun_error_t *err);
++int get_shared_empty_directory_path (char **out, const char *state_root, libcrun_error_t *err);
+ 
+ static inline void
+ libcrun_free_container_listp (void *p)

@@ -42,10 +42,12 @@ Epoch: 102
 # If that's what you're reading, Version must be 0, and will be updated by Packit for
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
-Version: 1.22
-Release: 1%{?dist}
+Version: 1.23.1
+Release: 2%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
+Patch0: https://github.com/containers/crun/pull/1859.patch
+Patch1: https://github.com/containers/crun/commit/d8a88c0620882fbc989f29ba83d1c46fab3bca09.patch
 License: GPL-2.0-only
 %if %{defined golang_arches_future}
 ExclusiveArch: %{golang_arches_future}
@@ -140,6 +142,15 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
+* Fri Sep 19 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-2
+- Backport multiple crun fixes to RHEL 9.6
+- Resolves: RHEL-115666
+
+* Fri Aug 22 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-1
+- update to https://github.com/containers/crun/releases/tag/1.23.1
+- fixes "Bump crun to 1.23.1 in RHEL 9.6"
+- Resolves: RHEL-110662
+
 * Tue Jul 15 2025 Jindrich Novy <jnovy@redhat.com> - 1.22-1
 - update to https://github.com/containers/crun/releases/tag/1.22
 - Resolves: RHEL-101023
