@@ -42,7 +42,7 @@ Epoch: 102
 # If that's what you're reading, Version must be 0, and will be updated by Packit for
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
-Version: 1.21
+Version: 1.23.1
 Release: 1%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
@@ -140,6 +140,11 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
+* Fri Aug 22 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-1
+- update to https://github.com/containers/crun/releases/tag/1.23.1
+- fixes "Bump crun to 1.23.1 in RHEL 10.0"
+- Resolves: RHEL-110663
+
 * Fri Mar 28 2025 Jindrich Novy <jnovy@redhat.com> - 1.21-1
 - update to https://github.com/containers/crun/releases/tag/1.21
 - Resolves: RHEL-84959
