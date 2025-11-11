@@ -123,6 +123,9 @@ export LDFLAGS="%{build_ldflags}"
 %make_install prefix=%{_prefix}
 rm -rf %{buildroot}%{_prefix}/lib*
 
+# Placeholder check to silence rpmlint
+%check
+
 %files
 %license COPYING
 %{_bindir}/%{name}
@@ -143,25 +146,28 @@ rm -rf %{buildroot}%{_prefix}/lib*
 
 %changelog
 * Fri Sep 19 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-2
-- Backport multiple crun fixes to RHEL 9.6
-- Resolves: RHEL-115666
+- Backport multiple crun fixes
+- Resolves: RHEL-114555
 
-* Fri Aug 22 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-1
+* Mon Aug 04 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-1
 - update to https://github.com/containers/crun/releases/tag/1.23.1
-- fixes "Bump crun to 1.23.1 in RHEL 9.6"
-- Resolves: RHEL-110662
+- Related: RHEL-80816
 
-* Tue Jul 15 2025 Jindrich Novy <jnovy@redhat.com> - 1.22-1
+* Mon Jul 28 2025 Jindrich Novy <jnovy@redhat.com> - 1.23-1
+- update to https://github.com/containers/crun/releases/tag/1.23
+- Related: RHEL-80816
+
+* Thu Jul 03 2025 Jindrich Novy <jnovy@redhat.com> - 1.22-1
 - update to https://github.com/containers/crun/releases/tag/1.22
-- Resolves: RHEL-101023
+- Related: RHEL-80816
 
 * Fri Mar 28 2025 Jindrich Novy <jnovy@redhat.com> - 1.21-1
 - update to https://github.com/containers/crun/releases/tag/1.21
-- Resolves: RHEL-84950
+- Related: RHEL-80816
 
 * Tue Mar 18 2025 Jindrich Novy <jnovy@redhat.com> - 1.20-2
 - fix gating.yaml
-- Resolves: RHEL-83146
+- Related: RHEL-80816
 
 * Wed Feb 05 2025 Jindrich Novy <jnovy@redhat.com> - 1.20-1
 - update to https://github.com/containers/crun/releases/tag/1.20
