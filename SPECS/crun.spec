@@ -42,7 +42,7 @@ Epoch: 102
 # If that's what you're reading, Version must be 0, and will be updated by Packit for
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
-Version: 1.26
+Version: 1.27
 Release: 1%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
@@ -143,6 +143,11 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
+* Mon Mar 30 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-1
+- update to https://github.com/containers/crun/releases/tag/1.27
+- fixes CVE-2026-30892 crun: crun: Privilege escalation due to incorrect parsing of the `--user` option [rhel-9.7.z]
+- Resolves: RHEL-161439
+
 * Tue Feb 24 2026 Jindrich Novy <jnovy@redhat.com> - 1.26-1
 - update to https://github.com/containers/crun/releases/tag/1.26
 - Resolves: RHEL-151594
