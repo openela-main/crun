@@ -42,7 +42,7 @@ Epoch: 102
 # If that's what you're reading, Version must be 0, and will be updated by Packit for
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
-Version: 1.23.1
+Version: 1.27
 Release: 1%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
@@ -69,11 +69,9 @@ BuildRequires: libseccomp-devel
 BuildRequires: python3-libmount
 BuildRequires: libtool
 BuildRequires: protobuf-c-devel
-%ifnarch riscv64
 BuildRequires: criu-devel >= 3.17.1-2
 Recommends: criu >= 3.17.1
 Recommends: criu-libs
-%endif
 %if %{defined wasmedge_support}
 BuildRequires: wasmedge-devel
 %endif
@@ -121,6 +119,9 @@ Recommends: wasmedge
 %make_install prefix=%{_prefix}
 rm -rf %{buildroot}%{_prefix}/lib*
 
+# Placeholder check to silence rpmlint
+%check
+
 %files
 %license COPYING
 %{_bindir}/%{name}
@@ -140,18 +141,30 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
-* Fri Aug 22 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-1
-- update to https://github.com/containers/crun/releases/tag/1.23.1
-- fixes "Bump crun to 1.23.1 in RHEL 10.0"
-- Resolves: RHEL-110663
+* Mon Mar 30 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-1
+- update to https://github.com/containers/crun/releases/tag/1.27
+- fixes CVE-2026-30892 crun: crun: Privilege escalation due to incorrect parsing of the `--user` option [rhel-10.1.z]
+- Resolves: RHEL-161416
 
-* Fri Mar 28 2025 Jindrich Novy <jnovy@redhat.com> - 1.21-1
+* Mon Aug 04 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-1
+- update to https://github.com/containers/crun/releases/tag/1.23.1
+- Related: RHEL-80817
+
+* Mon Jul 28 2025 Jindrich Novy <jnovy@redhat.com> - 1.23-1
+- update to https://github.com/containers/crun/releases/tag/1.23
+- Related: RHEL-80817
+
+* Thu Jul 03 2025 Jindrich Novy <jnovy@redhat.com> - 1.22-1
+- update to https://github.com/containers/crun/releases/tag/1.22
+- Related: RHEL-80817
+
+* Wed Apr 02 2025 Jindrich Novy <jnovy@redhat.com> - 1.21-1
 - update to https://github.com/containers/crun/releases/tag/1.21
-- Resolves: RHEL-84959
+- Related: RHEL-80817
 
 * Tue Mar 18 2025 Jindrich Novy <jnovy@redhat.com> - 1.20-2
-- fix gating.yaml and remove useless files
-- Resolves: RHEL-83933
+- fix gating.yaml
+- Related: RHEL-80817
 
 * Wed Feb 05 2025 Jindrich Novy <jnovy@redhat.com> - 1.20-1
 - update to https://github.com/containers/crun/releases/tag/1.20
