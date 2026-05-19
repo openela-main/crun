@@ -17,8 +17,8 @@
 %global wasmedge_opts --with-wasmedge
 %endif
 
-# krun only exists on fedora
-%if %{defined fedora}
+# krun support on Fedora and RHEL 10+
+%if %{defined fedora} || 0%{?rhel} >= 10
 %global krun_support 1
 %global krun_opts --with-libkrun
 %endif
@@ -43,7 +43,7 @@ Epoch: 102
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
 Version: 1.27
-Release: 1%{?dist}
+Release: 2%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
 License: GPL-2.0-only
@@ -141,10 +141,26 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
+* Mon Apr 13 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-2
+- enable krun handler for crun on RHEL 10
+- Resolves: RHEL-161090
+
 * Mon Mar 30 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-1
 - update to https://github.com/containers/crun/releases/tag/1.27
-- fixes CVE-2026-30892 crun: crun: Privilege escalation due to incorrect parsing of the `--user` option [rhel-10.1.z]
-- Resolves: RHEL-161416
+- fixes CVE-2026-30892 crun: crun: Privilege escalation due to incorrect parsing of the `--user` option [rhel-10.2]
+- Resolves: RHEL-161418
+
+* Wed Jan 21 2026 Jindrich Novy <jnovy@redhat.com> - 1.26-1
+- update to https://github.com/containers/crun/releases/tag/1.26
+- Resolves: RHEL-114419
+
+* Tue Dec 09 2025 Jindrich Novy <jnovy@redhat.com> - 1.25.1-1
+- update to https://github.com/containers/crun/releases/tag/1.25.1
+- Resolves: RHEL-116095
+
+* Tue Sep 16 2025 Jindrich Novy <jnovy@redhat.com> - 1.24-1
+- update to https://github.com/containers/crun/releases/tag/1.24
+- Related: RHEL-111917
 
 * Mon Aug 04 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-1
 - update to https://github.com/containers/crun/releases/tag/1.23.1
