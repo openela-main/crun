@@ -145,16 +145,16 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %changelog
 * Mon Mar 30 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-1
 - update to https://github.com/containers/crun/releases/tag/1.27
-- fixes CVE-2026-30892 crun: crun: Privilege escalation due to incorrect parsing of the `--user` option [rhel-9.7.z]
-- Resolves: RHEL-161439
+- fixes CVE-2026-30892 crun: crun: Privilege escalation due to incorrect parsing of the `--user` option [rhel-9.8]
+- Resolves: RHEL-161441
 
-* Tue Feb 24 2026 Jindrich Novy <jnovy@redhat.com> - 1.26-1
+* Thu Jan 22 2026 Jindrich Novy <jnovy@redhat.com> - 1.26-1
 - update to https://github.com/containers/crun/releases/tag/1.26
-- Resolves: RHEL-151594
+- Resolves: RHEL-143228
 
-* Fri Sep 19 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-2
-- Backport multiple crun fixes
-- Resolves: RHEL-114555
+* Tue Sep 16 2025 Jindrich Novy <jnovy@redhat.com> - 1.24-1
+- update to https://github.com/containers/crun/releases/tag/1.24
+- Related: RHEL-111919
 
 * Mon Aug 04 2025 Jindrich Novy <jnovy@redhat.com> - 1.23.1-1
 - update to https://github.com/containers/crun/releases/tag/1.23.1
