@@ -1,7 +1,7 @@
 Summary: OCI runtime written in C
 Name: crun
 Version: 1.14.3
-Release: 2%{?dist}
+Release: 4%{?dist}
 Source0: https://github.com/containers/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 License: GPLv2+
 URL: https://github.com/containers/crun
@@ -49,6 +49,14 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %{_mandir}/man1/*
 
 %changelog
+* Tue Sep 01 2026 Jindrich Novy <jnovy@redhat.com> - 1.14.3-4
+- rebuild with updated Go to fix CVE-2026-42499
+- Resolves: RHEL-241893
+
+* Thu Aug 20 2026 Jindrich Novy <jnovy@redhat.com> - 1.14.3-3
+- rebuild with Go 1.25.11 to fix CVE-2026-33818, CVE-2026-56853, CVE-2026-56858,
+  CVE-2026-56859, CVE-2026-56860, CVE-2026-56862
+
 * Mon Feb 19 2024 Jindrich Novy <jnovy@redhat.com> - 1.14.3-2
 - remove BR libgcrypt-devel, no longer needed
 - Related: Jira:RHEL-2110
