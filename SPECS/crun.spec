@@ -1,6 +1,6 @@
 %global krun_opts %{nil}
 %global wasmedge_opts %{nil}
-%global yajl_opts %{nil}
+%global blake3_opts --enable-embedded-blake3
 
 %if %{defined copr_username}
 %define copr_build 1
@@ -25,12 +25,6 @@
 
 %endif
 
-%if %{defined fedora} || (%{defined rhel} && 0%{?rhel} < 10)
-%global system_yajl 1
-%else
-%global yajl_opts --enable-embedded-yajl
-%endif
-
 Summary: OCI runtime written in C
 Name: crun
 %if %{defined copr_build}
@@ -42,7 +36,7 @@ Epoch: 102
 # If that's what you're reading, Version must be 0, and will be updated by Packit for
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
-Version: 1.27
+Version: 1.30.1
 Release: 2%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
@@ -62,9 +56,7 @@ BuildRequires: libcap-devel
 BuildRequires: libkrun-devel
 %endif
 BuildRequires: systemd-devel
-%if %{defined system_yajl}
-BuildRequires: yajl-devel
-%endif
+BuildRequires: json-c-devel
 BuildRequires: libseccomp-devel
 BuildRequires: python3-libmount
 BuildRequires: libtool
@@ -112,7 +104,7 @@ Recommends: wasmedge
 
 %build
 ./autogen.sh
-./configure --disable-silent-rules %{krun_opts} %{wasmedge_opts} %{yajl_opts}
+./configure --disable-silent-rules %{krun_opts} %{wasmedge_opts} %{blake3_opts}
 %make_build
 
 %install
@@ -141,6 +133,14 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
+* Tue Sep 29 2026 Jindrich Novy <jnovy@redhat.com> - 1.30.1-2
+- port spec from upstream tarball: replace yajl with json-c-devel, add embedded
+  blake3 support - Resolves: RHEL-257422
+
+* Tue Sep 29 2026 Jindrich Novy <jnovy@redhat.com> - 1.30.1-1
+- update to https://github.com/containers/crun/releases/tag/1.30.1
+- Resolves: RHEL-257422
+
 * Mon Apr 13 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-2
 - enable krun handler for crun on RHEL 10
 - Resolves: RHEL-161090
