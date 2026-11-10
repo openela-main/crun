@@ -1,6 +1,6 @@
 %global krun_opts %{nil}
 %global wasmedge_opts %{nil}
-%global yajl_opts %{nil}
+%global blake3_opts --enable-embedded-blake3
 
 %if %{defined copr_username}
 %define copr_build 1
@@ -17,7 +17,7 @@
 %global wasmedge_opts --with-wasmedge
 %endif
 
-# krun only exists on fedora
+# krun support on Fedora only
 %if %{defined fedora}
 %global krun_support 1
 %global krun_opts --with-libkrun
@@ -25,11 +25,6 @@
 
 %endif
 
-%if %{defined fedora} || (%{defined rhel} && 0%{?rhel} < 10)
-%global system_yajl 1
-%else
-%global yajl_opts --enable-embedded-yajl
-%endif
 
 Summary: OCI runtime written in C
 Name: crun
@@ -42,7 +37,7 @@ Epoch: 102
 # If that's what you're reading, Version must be 0, and will be updated by Packit for
 # copr and koji builds.
 # If you're reading this on dist-git, the version is automatically filled in by Packit.
-Version: 1.27
+Version: 1.29.1
 Release: 1%{?dist}
 URL: https://github.com/containers/%{name}
 Source0: %{url}/releases/download/%{version}/%{name}-%{version}.tar.zst
@@ -62,9 +57,7 @@ BuildRequires: libcap-devel
 BuildRequires: libkrun-devel
 %endif
 BuildRequires: systemd-devel
-%if %{defined system_yajl}
-BuildRequires: yajl-devel
-%endif
+BuildRequires: json-c-devel >= 0.14
 BuildRequires: libseccomp-devel
 BuildRequires: python3-libmount
 BuildRequires: libtool
@@ -76,6 +69,8 @@ Recommends: criu-libs
 BuildRequires: wasmedge-devel
 %endif
 BuildRequires: python
+BuildRequires: glibc-static
+Requires: (container-selinux >= 4:2.240.0-3 if selinux-policy)
 Provides: oci-runtime
 
 %description
@@ -114,7 +109,7 @@ Recommends: wasmedge
 export CFLAGS="%{optflags} -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
 export LDFLAGS="%{build_ldflags}"
 ./autogen.sh
-./configure --disable-silent-rules %{krun_opts} %{wasmedge_opts} %{yajl_opts}
+./configure --disable-silent-rules %{krun_opts} %{wasmedge_opts} %{blake3_opts}
 %make_build
 
 %install
@@ -143,10 +138,20 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %endif
 
 %changelog
-* Mon Mar 30 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-1
+* Mon Aug 17 2026 Jindrich Novy <jnovy@redhat.com> - 1.29.1-1
+- update to https://github.com/containers/crun/releases/tag/1.29.1
+- Resolves: RHEL-185741
+
+* Wed Jun 17 2026 Jindrich Novy <jnovy@redhat.com> - 1.28-1
+- update to https://github.com/containers/crun/releases/tag/1.28
+- Resolves: RHEL-185741
+* Thu Apr 17 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-2
+- add conditional Requires on container-selinux for SELinux-enabled systems
+- Resolves: RHEL-169227
+
+* Fri Apr 10 2026 Jindrich Novy <jnovy@redhat.com> - 1.27-1
 - update to https://github.com/containers/crun/releases/tag/1.27
-- fixes CVE-2026-30892 crun: crun: Privilege escalation due to incorrect parsing of the `--user` option [rhel-9.8]
-- Resolves: RHEL-161441
+- Resolves: RHEL-161443
 
 * Thu Jan 22 2026 Jindrich Novy <jnovy@redhat.com> - 1.26-1
 - update to https://github.com/containers/crun/releases/tag/1.26
