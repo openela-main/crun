@@ -1,8 +1,10 @@
 Summary: OCI runtime written in C
 Name: crun
 Version: 1.14.3
-Release: 4%{?dist}
+Release: 5%{?dist}
 Source0: https://github.com/containers/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
+# https://github.com/containers/crun/commit/c6f338ac2e26e216ab7820b91863a0b84e608097
+Patch0: CVE-2026-47766.patch
 License: GPLv2+
 URL: https://github.com/containers/crun
 # https://fedoraproject.org/wiki/PackagingDrafts/Go#Go_Language_Architectures
@@ -49,6 +51,10 @@ rm -rf %{buildroot}%{_prefix}/lib*
 %{_mandir}/man1/*
 
 %changelog
+* Thu Oct 29 2026 Jindrich Novy <jnovy@redhat.com> - 1.14.3-5
+- fix CVE-2026-47766 - crun: Arbitrary file creation/overwrite via symlink following
+- Resolves: RHEL-293401
+
 * Tue Sep 01 2026 Jindrich Novy <jnovy@redhat.com> - 1.14.3-4
 - rebuild with updated Go to fix CVE-2026-42499
 - Resolves: RHEL-241893
